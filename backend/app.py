@@ -1,22 +1,22 @@
 # app.py
 # FastAPI server for MyFin backend
-from fastapi import FastAPI, UploadFile, File
+from fastapi import FastAPI, File, UploadFile, Request
+from fastapi.responses import HTMLResponse
 from fastapi.responses import JSONResponse
 from parser import parse_hdfc_txt
-from db import create_expenses_table, get_connection
+from fastapi.templating import Jinja2Templates
+from fastapi.staticfiles import StaticFiles
 
-# Create FastAPI instance
 app = FastAPI()
 
-# Initialize database table
-create_expenses_table()
+# Add this
+templates = Jinja2Templates(directory="templates")
+#app.mount("/static", StaticFiles(directory="backend/static"), name="static")
 
-@app.get("/")
-def home():
-    """
-    Home endpoint
-    """
-    return {"message": "Welcome to MyFin Local Expense Tracker!"}
+@app.get("/", response_class=HTMLResponse)
+async def home(request: Request):
+    return templates.TemplateResponse("index.html", {"request": request})
+
 
 @app.post("/upload-txt/")
 async def upload_txt(file: UploadFile = File(...)):

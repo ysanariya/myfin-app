@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>MyFin - Expense Validator</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 min-h-screen flex flex-col items-center justify-center p-6">
+  <h1 class="text-3xl font-bold mb-4">Upload Expense File</h1>
+
+  <form id="uploadForm" enctype="multipart/form-data" class="bg-white p-6 rounded-xl shadow-md">
+    <input type="file" id="fileInput" name="file" accept=".txt" class="mb-4">
+    <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded">Upload</button>
+  </form>
+
+  <div id="results" class="mt-6">
+  <h2 class="text-xl font-semibold mb-2">Preview Top 10 Transactions</h2>
+  <div id="table-container"></div>
+</div>
+
+
+  <script>
+  document.getElementById("uploadForm").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const fileInput = document.getElementById("fileInput");
+    const formData = new FormData();
+    formData.append("file", fileInput.files[0]);
+
+    const response = await fetch("/upload-txt/", {
+      method: "POST",
+      body: formData,
+    });
+
+    const data = await response.json();
+    const container = document.getElementById("table-container");
+    container.innerHTML = ""; // Clear previous content
+
+    if (data.parsed_rows && data.parsed_rows.length > 0) {
+      const table = document.createElement("table");
+      table.className = "min-w-full bg-white rounded-lg shadow-md";
+      table.innerHTML = `
+        <thead>
+          <tr class="bg-gray-100 text-left text-gray-700 font-semibold">
+            <th class="py-2 px-4">Select</th>
+            <th class="py-2 px-4">Date</th>
+            <th class="py-2 px-4">Description</th>
+            <th class="py-2 px-4">Amount</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${data.parsed_rows
+            .slice(0, 10)
+            .map(
+              (row, i) => `
+            <tr class="border-b hover:bg-gray-50">
+              <td class="py-2 px-4 text-center"><input type="checkbox" checked id="row-${i}" /></td>
+              <td class="py-2 px-4">${row.date}</td>
+              <td class="py-2 px-4">${row.narration}</td>
+              <td class="py-2 px-4 font-semibold ${
+                row.debit > 0
+                  ? 'text-red-500'
+                  : row.credit > 0
+                  ? 'text-green-600'
+                  : 'text-gray-700'
+              }">
+                ₹${row.debit > 0 ? row.debit : row.credit}
+              </td>
+            </tr>`
+            )
+            .join("")}
+        </tbody>
+      `;
+      container.appendChild(table);
+    } else {
+      container.innerHTML = `<p class="text-gray-500">No data found in file.</p>`;
+    }
+  });
+</script>
+
+</body>
+</html>
